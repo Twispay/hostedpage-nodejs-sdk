@@ -1,11 +1,31 @@
 "use strict"
 
+/**
+ * The module implements methods to get the value
+ * of `jsonRequest` and `checksum` that need to be sent by POST
+ * when making a Twispay order and to decrypt the Twispay IPN response.
+ */
 module.exports = class {
+    /**
+     * Get the `jsonRequest` parameter (order parameters as JSON and base64 encoded).
+     *
+     * @param {object} orderData The order parameters.
+     *
+     * @returns {string}
+     */
     static getBase64JsonRequest(orderData) {
         let jsonText = JSON.stringify(orderData)
         return Buffer.alloc(Buffer.byteLength(jsonText), jsonText).toString('base64')
     }
 
+    /**
+     * Get the `checksum` parameter (the checksum computed over the `jsonRequest` and base64 encoded).
+     *
+     * @param {object} orderData The order parameters.
+     * @param {string} secretKey The secret key (from Twispay).
+     *
+     * @returns {PromiseLike<ArrayBuffer>}
+     */
     static getBase64Checksum(orderData, secretKey) {
         let crypto = require('crypto'),
             hmacSha512 = crypto.createHmac('sha512', secretKey)
@@ -13,17 +33,14 @@ module.exports = class {
         return hmacSha512.digest('base64')
     }
 
-    static getHtmlOrderForm(orderData, secretKey, twispayLive = false) {
-        let base64JsonRequest = this.getBase64JsonRequest(orderData),
-            base64Checksum = this.getBase64Checksum(orderData, secretKey),
-            hostName = twispayLive ? "secure.twispay.com" : "secure-stage.twispay.com"
-        return `<form action="https://${hostName}" method="post" accept-charset="UTF-8">
-    <input type="hidden" name="jsonRequest" value="${base64JsonRequest}">
-    <input type="hidden" name="checksum" value="${base64Checksum}">
-    <input type="submit" value="Pay">
-</form>`
-    }
-
+    /**
+     * Decrypt the IPN response from Twispay.
+     *
+     * @param {string} encryptedIpnResponse
+     * @param {string} secretKey The secret key (from Twispay).
+     *
+     * @returns {object}
+     */
     static decryptIpnResponse(encryptedIpnResponse, secretKey) {
         // get the IV and the encrypted data
         let encryptedParts = encryptedIpnResponse.split(',', 2),
