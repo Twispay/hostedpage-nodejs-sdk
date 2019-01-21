@@ -13,7 +13,7 @@ let secretKey = "cd07b3c95dc9a0c8e9318b29bdc13b03"
 console.log("encryptedIpnResponse: " + encryptedIpnResponse)
 console.log("secretKey: " + secretKey)
 
-// get the JSON IPN response
-let jsonResponse = twispay.decryptIpnResponse(encryptedIpnResponse, secretKey)
+// get the IPN response
+let ipnResponse = twispay.decryptIpnResponse(encryptedIpnResponse, secretKey)
 
-console.log("Decrypted IPN response: " + JSON.stringify(jsonResponse, null, 4))
+console.log("Decrypted IPN response: " + JSON.stringify(ipnResponse, null, 4))
