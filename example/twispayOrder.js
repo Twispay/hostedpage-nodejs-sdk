@@ -7,6 +7,7 @@ let twispay = require('../src/Twispay')
 // sample data contains all available parameters
 // depending on order type, not all parameters are required/needed
 // you need to replace `siteId` etc. with valid data
+// do not send empty values for optional parameters
 let orderData = {
     "siteId": 1, // mandatory
     "customer": { // mandatory
