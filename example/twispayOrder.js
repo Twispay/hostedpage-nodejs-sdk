@@ -8,29 +8,32 @@ let twispay = require('../src/Twispay')
 // depending on order type, not all parameters are required/needed
 // you need to replace `siteId` etc. with valid data
 let orderData = {
-    "siteId": 1,
-    "customer": {
-        "identifier": "external-user-id",
-        "firstName": "John ",
-        "lastName": "Doe",
-        "country": "US",
+    "siteId": 1, // mandatory
+    "customer": { // mandatory
+        "identifier": "external-user-id", // mandatory
+        "firstName": "John ", // conditional (if required by the bank/mid)
+        "lastName": "Doe", // conditional (if required by the bank/mid)
+        "country": "US", // conditional (if required by the bank/mid)
         "state": "NY",
-        "city": "New York",
-        "address": "1st Street",
-        "zipCode": "11222",
-        "phone": "0012120000000",
-        "email": "john.doe@test.com",
+        "city": "New York", // conditional (if required by the bank/mid)
+        "address": "1st Street", // conditional (if required by the bank/mid)
+        "zipCode": "11222", // conditional (if required by the bank/mid)
+        "phone": "0012120000000", // conditional (if required by the bank/mid)
+        "email": "john.doe@test.com", // mandatory
         "tags": [
             "customer_tag_1",
             "customer_tag_2"
         ]
     },
     "order": {
-        "orderId": "external-order-id",
-        "type": "recurring",
-        "amount": 2194.99,
-        "currency": "USD",
-        "items": [
+        "orderId": "external-order-id", // mandatory
+        "type": "recurring", // mandatory; one of: purchase, recurring, managed
+        "amount": 2194.99, // mandatory
+        "currency": "USD", // mandatory
+        
+        // use description or items; for airlines or tourism the items is mandatory
+        "description": "product or service description",
+        "items": [ // an array of item object; add any number of items on the cart
             {
                 "item": "1 year subscription on site",
                 "unitPrice": 34.99,
@@ -51,7 +54,7 @@ let orderData = {
             },
             {
                 "item": "discount",
-                "unitPrice": 10,
+                "unitPrice": -10.00,
                 "units": 1,
                 "type": "digital",
                 "code": "fgh",
@@ -63,11 +66,14 @@ let orderData = {
             "tag_1",
             "tag_2"
         ],
-        "intervalType": "month",
-        "intervalValue": 1,
-        "trialAmount": 1,
-        "firstBillDate": "2020-10-02T12:00:00+00:00",
-        "level3Type": "airline",
+        "intervalType": "month", // conditional (if order.type = recurring)
+        "intervalValue": 1, // conditional (if order.type = recurring)
+        "trialAmount": 1, // conditional (if order.type = recurring and you want smaller payment for trial)
+        "firstBillDate": "2020-10-02T12:00:00+00:00", // conditional (if order.type = recurring)
+        
+        // next fields are mandatory if your business is airlines or tourism
+        // send one of level3Airline, level3Tourism objects along with level3Type to match what you send
+        "level3Type": "airline", // one of: airlines, tourism
         "level3Airline": {
             "ticketNumber": "8V32EU",
             "passengerName": "John Doe",
@@ -78,13 +84,21 @@ let orderData = {
             "carrierCode": "American Airlines",
             "travelAgencyCode": "19NOV05",
             "travelAgencyName": "Elite Travel"
-        }
+        },
+        "level3Tourism": {
+            "tourNumber": "8V32EU",
+            "travellerName": "John Doe",
+            "departureDate": "2020-02-05T14:13:00+02:00",
+            "returnDate": "2020-02-06T14:13:00+02:00",
+            "travelAgencyCode": "19NOV05",
+            "travelAgencyName": "Elite Travel"            
+        }        
     },
-    "cardTransactionMode": "authAndCapture",
-    "cardId": 1,
-    "invoiceEmail": "john.doe@test.com",
-    "backUrl": "http://google.com",
-    "customData": {
+    "cardTransactionMode": "authAndCapture", // mandatory; one of: auth, authAndCapture
+    "cardId": 1, // optional; use it if you want to suggest customer to use one of his previous saved cards
+    "invoiceEmail": "john.doe@test.com", // optional; if you need different email address than of the customer's where he will receive the payment confirmation
+    "backUrl": "http://google.com", // optional
+    "customData": { // optional; any number of custom fields that you want to pass to twispay and get back on the transaction response
         "key1": "value",
         "key2": "value"
     }
@@ -99,7 +113,8 @@ console.log("secretKey: " + secretKey)
 // TRUE for Twispay live site, otherwise Twispay stage will be used
 let twispayLive = false
 
-// get the HTML form
+// send base64JsonRequest and base64Checksum to your front-end (recommended)
+// or use the already rendered form htmlForm (some frameworks like angular will not let you use this html and will encode html special chars)
 let base64JsonRequest = twispay.getBase64JsonRequest(orderData),
     base64Checksum = twispay.getBase64Checksum(orderData, secretKey),
     hostName = twispayLive ? "secure.twispay.com" : "secure-stage.twispay.com",
